@@ -67,6 +67,15 @@ test("throws and does not cache when the provider responds with an error", async
 	assert.equal(calls.length, 2);
 });
 
+test("accepts a document issuer that only differs from the requested issuer by a trailing slash", async () => {
+	clearDiscoveryCache();
+	const trailingSlash = { ...DOCUMENT, issuer: "https://auth.example.com/realms/erp/" };
+	const { impl } = stubFetch(trailingSlash);
+	const endpoints = await discoverEndpoints("https://auth.example.com/realms/erp", impl);
+	assert.equal(endpoints.issuer, "https://auth.example.com/realms/erp");
+	assert.equal(endpoints.authorizationEndpoint, DOCUMENT.authorization_endpoint);
+});
+
 test("throws and does not cache when the document issuer does not match the requested issuer", async () => {
 	clearDiscoveryCache();
 	const mismatched = { ...DOCUMENT, issuer: "https://attacker.example.com/realms/erp" };

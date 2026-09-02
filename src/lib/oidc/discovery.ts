@@ -36,15 +36,17 @@ export async function discoverEndpoints(issuer: string, fetchImpl: typeof fetch 
 
 	const document = (await response.json()) as Record<string, unknown>;
 	const documentIssuer = requireString(document, "issuer");
-	if (documentIssuer !== normalized) {
+	if (documentIssuer.replace(/\/+$/, "") !== normalized) {
 		throw new Error(
 			`OIDC discovery document issuer "${documentIssuer}" does not match the configured issuer "${normalized}"`,
 		);
 	}
 
+	// Store the administrator-configured issuer, not the provider's rendering of it, so a
+	// provider later flipping its trailing slash (e.g. Auth0) can't desync oidc_identities.
 	const methods = document.token_endpoint_auth_methods_supported;
 	const endpoints: OidcEndpoints = {
-		issuer: documentIssuer,
+		issuer: normalized,
 		authorizationEndpoint: requireString(document, "authorization_endpoint"),
 		tokenEndpoint: requireString(document, "token_endpoint"),
 		userinfoEndpoint: requireString(document, "userinfo_endpoint"),

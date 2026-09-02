@@ -23,7 +23,9 @@ export async function POST(request: Request) {
 			{ status: 403 },
 		);
 	}
-	if (oidc.status === "incomplete" && typeof envRecord.OIDC_ONLY === "string") {
+	const oidcOnlyRequested = typeof envRecord.OIDC_ONLY === "string"
+		&& ["true", "1"].includes(envRecord.OIDC_ONLY.trim().toLowerCase());
+	if (oidc.status === "incomplete" && oidcOnlyRequested) {
 		console.warn("Password sign-in is enabled because the OIDC configuration is incomplete", {
 			missing: oidc.missing,
 		});
