@@ -43,7 +43,7 @@ export function createIdentityStore(env: CloudflareEnv): IdentityStore {
 		},
 
 		async createUser(input: { email: string; name: string }): Promise<StoredUser> {
-			const id = newId();
+			const id = newId("usr");
 			await db.insert(users).values({
 				id,
 				email: input.email,
