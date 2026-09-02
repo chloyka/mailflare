@@ -55,6 +55,16 @@ test("parseUserinfo throws when sub is absent", () => {
 	assert.throws(() => parseUserinfo({ email: "a@b.com" }, null), /sub/);
 });
 
+test("parseUserinfo defaults emailVerified to false when the claim is absent", () => {
+	const parsed = parseUserinfo({ sub: "s", email: "a@b.com" }, null);
+	assert.equal(parsed.emailVerified, false);
+});
+
+test("parseUserinfo drops non-string entries from the groups claim", () => {
+	const parsed = parseUserinfo({ sub: "s", groups: ["a", 1, null, {}, "b"] }, "groups");
+	assert.deepEqual(parsed.groups, ["a", "b"]);
+});
+
 test("branch 1: an existing link wins and ignores the idp email", async () => {
 	const linked = { id: "u1", email: "old@example.com", disabled: false };
 	const { store, calls } = makeStore({ identities: { [`${ISSUER}|sub-1`]: linked } });
@@ -100,6 +110,50 @@ test("a provider that omits the email is rejected as no_account", async () => {
 		store,
 	});
 	assert.deepEqual(result, { ok: false, code: "no_account" });
+});
+
+test("a missing email is no_account even when emailVerified is also false — the email check comes first", async () => {
+	const { store } = makeStore();
+	const result = await resolveOidcUser({
+		issuer: ISSUER,
+		claims: claims({ email: null, emailVerified: false }),
+		policy: OPEN_POLICY,
+		store,
+	});
+	assert.deepEqual(result, { ok: false, code: "no_account" });
+});
+
+test("an email with no @ is rejected as no_account, and multiple @ signs use the last one as the domain", async () => {
+	const { store: noAtStore } = makeStore();
+	const noAtResult = await resolveOidcUser({
+		issuer: ISSUER,
+		claims: claims({ email: "noatsign" }),
+		policy: OPEN_POLICY,
+		store: noAtStore,
+	});
+	assert.deepEqual(noAtResult, { ok: false, code: "no_account" });
+
+	const { store: multiAtStore, calls } = makeStore();
+	const multiAtResult = await resolveOidcUser({
+		issuer: ISSUER,
+		claims: claims({ email: "a@b@example.com", name: null }),
+		policy: { autoProvision: true, allowedEmailDomains: ["example.com"], requiredGroup: null },
+		store: multiAtStore,
+	});
+	assert.equal(multiAtResult.ok, true);
+	assert.deepEqual(calls.created, [{ email: "a@b@example.com", name: "a" }]);
+});
+
+test("the domain allowlist is exact match, not a suffix match", async () => {
+	const { store, calls } = makeStore();
+	const result = await resolveOidcUser({
+		issuer: ISSUER,
+		claims: claims({ email: "user@evilexample.com" }),
+		policy: { autoProvision: true, allowedEmailDomains: ["example.com"], requiredGroup: null },
+		store,
+	});
+	assert.deepEqual(result, { ok: false, code: "domain_not_allowed" });
+	assert.equal(calls.created.length, 0);
 });
 
 test("branch 4: provisioning disabled rejects an unknown user", async () => {
@@ -161,6 +215,30 @@ test("a disabled account is refused on both the linked and the newly linked path
 		await resolveOidcUser({ issuer: ISSUER, claims: claims(), policy: CLOSED_POLICY, store: byEmailStore.store }),
 		{ ok: false, code: "account_disabled" },
 	);
+});
+
+test("a newly created user that comes back disabled is refused, not admitted", async () => {
+	const identities = new Map();
+	const usersByEmail = new Map();
+	const calls = { linked: [], created: [] };
+	const store = {
+		async findUserByOidcIdentity(issuer, subject) {
+			return identities.get(`${issuer}|${subject}`) ?? null;
+		},
+		async findUserByEmail(email) {
+			return usersByEmail.get(email) ?? null;
+		},
+		async linkIdentity(userId, issuer, subject) {
+			calls.linked.push({ userId, issuer, subject });
+		},
+		async createUser({ email, name }) {
+			const user = { id: "new-user", email, disabled: true };
+			calls.created.push({ email, name });
+			return user;
+		},
+	};
+	const result = await resolveOidcUser({ issuer: ISSUER, claims: claims(), policy: OPEN_POLICY, store });
+	assert.deepEqual(result, { ok: false, code: "account_disabled" });
 });
 
 test("the display name falls back to the email local part", async () => {

@@ -68,7 +68,7 @@ export async function resolveOidcUser(input: {
 		return linked.disabled ? { ok: false, code: "account_disabled" } : { ok: true, user: linked };
 	}
 
-	if (!claims.email) return { ok: false, code: "no_account" };
+	if (!claims.email || !claims.email.includes("@")) return { ok: false, code: "no_account" };
 	if (!claims.emailVerified) return { ok: false, code: "email_unverified" };
 
 	const existing = await store.findUserByEmail(claims.email);
@@ -89,10 +89,11 @@ export async function resolveOidcUser(input: {
 		return { ok: false, code: "group_missing" };
 	}
 
+	const localPart = claims.email.slice(0, claims.email.indexOf("@"));
 	const created = await store.createUser({
 		email: claims.email,
-		name: claims.name ?? claims.email.slice(0, claims.email.indexOf("@")),
+		name: claims.name ?? (localPart || claims.email),
 	});
 	await store.linkIdentity(created.id, issuer, claims.subject);
-	return { ok: true, user: created };
+	return created.disabled ? { ok: false, code: "account_disabled" } : { ok: true, user: created };
 }
