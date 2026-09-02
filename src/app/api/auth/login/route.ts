@@ -11,9 +11,17 @@ import { verifyTurnstileToken } from "@/lib/auth/turnstile";
 import { readJsonBody } from "@/lib/http/request";
 import { RequestBodyTooLargeError } from "@/lib/http/errors";
 import { recordAuthActivity } from "@/lib/auth/activity";
+import { readOidcConfig } from "@/lib/oidc/config";
 
 export async function POST(request: Request) {
 	const env = getEnv();
+	const oidc = readOidcConfig(env as unknown as Record<string, unknown>);
+	if (oidc.status === "enabled" && oidc.config.oidcOnly) {
+		return NextResponse.json(
+			{ error: "Password sign-in is disabled. Use single sign-on." },
+			{ status: 403 },
+		);
+	}
 	let body: unknown;
 	try {
 		body = await readJsonBody(request, 16 * 1024);
