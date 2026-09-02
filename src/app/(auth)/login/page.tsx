@@ -4,6 +4,7 @@ import { AuthGuard } from "@/components/auth/auth-guard";
 import { hasAdminAccount } from "@/lib/auth/setup";
 import { getUserFromSession, SESSION_COOKIE } from "@/lib/auth/session";
 import { getEnv } from "@/lib/cloudflare";
+import { readOidcConfig } from "@/lib/oidc/config";
 import { LoginClient } from "./login-client";
 
 export const dynamic = "force-dynamic";
@@ -15,9 +16,16 @@ export default async function LoginPage() {
 	const user = await getUserFromSession(env, cookieStore.get(SESSION_COOKIE)?.value);
 	if (user && !user.disabled) redirect("/inbox");
 
+	const oidc = readOidcConfig(env as unknown as Record<string, unknown>);
+	const ssoEnabled = oidc.status === "enabled";
+
 	return (
 		<AuthGuard mode="public">
-			<LoginClient />
+			<LoginClient
+				ssoEnabled={ssoEnabled}
+				ssoLabel={ssoEnabled ? oidc.config.buttonLabel : ""}
+				passwordLoginEnabled={!(ssoEnabled && oidc.config.oidcOnly)}
+			/>
 		</AuthGuard>
 	);
 }
