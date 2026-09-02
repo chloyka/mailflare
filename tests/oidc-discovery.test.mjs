@@ -66,3 +66,18 @@ test("throws and does not cache when the provider responds with an error", async
 	await assert.rejects(() => discoverEndpoints("https://auth.example.com/realms/erp", impl), /503/);
 	assert.equal(calls.length, 2);
 });
+
+test("throws and does not cache when the document issuer does not match the requested issuer", async () => {
+	clearDiscoveryCache();
+	const mismatched = { ...DOCUMENT, issuer: "https://attacker.example.com/realms/erp" };
+	const { impl, calls } = stubFetch(mismatched);
+	await assert.rejects(
+		() => discoverEndpoints("https://auth.example.com/realms/erp", impl),
+		/https:\/\/attacker\.example\.com\/realms\/erp.*https:\/\/auth\.example\.com\/realms\/erp/,
+	);
+	await assert.rejects(
+		() => discoverEndpoints("https://auth.example.com/realms/erp", impl),
+		/https:\/\/attacker\.example\.com\/realms\/erp.*https:\/\/auth\.example\.com\/realms\/erp/,
+	);
+	assert.equal(calls.length, 2);
+});
