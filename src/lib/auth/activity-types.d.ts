@@ -1,4 +1,4 @@
-export type AuthActivityAction = "auth.login" | "auth.logout";
+export type AuthActivityAction = "auth.login" | "auth.login.oidc" | "auth.logout";
 
 export type AuthActivityMetadata = {
 	ipAddress: string;
