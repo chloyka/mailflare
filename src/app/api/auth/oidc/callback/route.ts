@@ -8,6 +8,7 @@ import { readOidcConfig } from "@/lib/oidc/config";
 import { OIDC_COOKIE_PATH, OIDC_STATE_COOKIE, OIDC_VERIFIER_COOKIE, resolveRedirectUri } from "@/lib/oidc/cookies";
 import { discoverEndpoints } from "@/lib/oidc/discovery";
 import { parseUserinfo, resolveOidcUser } from "@/lib/oidc/identity";
+import type { OidcClaims, ResolveResult } from "@/lib/oidc/identity";
 import { safeCompare } from "@/lib/oidc/pkce";
 import { createIdentityStore } from "@/lib/oidc/store";
 
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
 
 	const params = request.nextUrl.searchParams;
 	if (params.get("error")) {
-		console.warn(`OIDC provider returned an error: ${params.get("error")}`);
+		console.warn("OIDC provider returned an error", { error: params.get("error")?.slice(0, 64) });
 		return failure(request, "access_denied");
 	}
 
@@ -47,9 +48,9 @@ export async function GET(request: NextRequest) {
 		return failure(request, "state_mismatch");
 	}
 
-	let claims;
+	let claims: OidcClaims;
 	let issuer: string;
-	let resolved;
+	let resolved: ResolveResult;
 	try {
 		const endpoints = await discoverEndpoints(config.issuer);
 		issuer = endpoints.issuer;
@@ -80,7 +81,7 @@ export async function GET(request: NextRequest) {
 	}
 
 	if (!resolved.ok) {
-		console.warn(`OIDC sign-in refused for subject ${claims.subject}: ${resolved.code}`);
+		console.warn("OIDC sign-in refused", { subject: claims.subject.slice(0, 64), code: resolved.code });
 		return failure(request, resolved.code);
 	}
 
