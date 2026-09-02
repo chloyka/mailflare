@@ -66,3 +66,26 @@ print("ok")
 	assert.equal(result.status, 0, result.stderr + result.stdout);
 	assert.match(result.stdout, /^ok$/m);
 });
+
+test("bootstrap schema creates oidc_identities and records migration 0023", () => {
+	const sql = initialSchemaSql();
+	assert.match(
+		sql,
+		/CREATE TABLE IF NOT EXISTS oidc_identities \(/,
+		"INITIAL_SCHEMA_SQL is missing the oidc_identities table",
+	);
+	assert.match(
+		sql,
+		/CREATE UNIQUE INDEX IF NOT EXISTS oidc_identities_issuer_subject_idx/,
+		"INITIAL_SCHEMA_SQL is missing the (issuer, subject) unique index",
+	);
+	assert.match(
+		sql,
+		/CREATE INDEX IF NOT EXISTS oidc_identities_user_idx/,
+		"INITIAL_SCHEMA_SQL is missing the user_id index",
+	);
+	assert.ok(
+		migrationNames().includes("0023_add_oidc_identities.sql"),
+		"MIGRATION_NAMES is missing 0023_add_oidc_identities.sql",
+	);
+});

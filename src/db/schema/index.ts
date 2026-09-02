@@ -342,6 +342,25 @@ export const sessions = sqliteTable("sessions", {
 		.$defaultFn(() => new Date()),
 });
 
+export const oidcIdentities = sqliteTable(
+	"oidc_identities",
+	{
+		id: text("id").primaryKey(),
+		userId: text("user_id")
+			.notNull()
+			.references(() => users.id, { onDelete: "cascade" }),
+		issuer: text("issuer").notNull(),
+		subject: text("subject").notNull(),
+		createdAt: integer("created_at", { mode: "timestamp" })
+			.notNull()
+			.$defaultFn(() => new Date()),
+	},
+	(t) => [
+		uniqueIndex("oidc_identities_issuer_subject_idx").on(t.issuer, t.subject),
+		index("oidc_identities_user_idx").on(t.userId),
+	],
+);
+
 export const auditLogs = sqliteTable(
 	"audit_logs",
 	{

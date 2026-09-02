@@ -22,6 +22,7 @@ const MIGRATION_NAMES = [
 	"0020_add_calendar_templates_schedule.sql",
 	"0021_add_mailbox_signature.sql",
 	"0022_add_mailbox_auto_reply.sql",
+	"0023_add_oidc_identities.sql",
 ];
 
 const INITIAL_SCHEMA_SQL = `
@@ -62,6 +63,9 @@ CREATE TABLE IF NOT EXISTS routing_rules (id text PRIMARY KEY NOT NULL, user_id 
 CREATE TABLE IF NOT EXISTS webhooks (id text PRIMARY KEY NOT NULL, user_id text NOT NULL REFERENCES users(id) ON DELETE cascade, url text NOT NULL, secret text NOT NULL, events text NOT NULL, enabled integer DEFAULT true NOT NULL, created_at integer NOT NULL);
 CREATE TABLE IF NOT EXISTS webhook_deliveries (id text PRIMARY KEY NOT NULL, webhook_id text NOT NULL REFERENCES webhooks(id) ON DELETE cascade, event_type text NOT NULL, payload text NOT NULL, status text DEFAULT 'pending' NOT NULL, attempts integer DEFAULT 0 NOT NULL, created_at integer NOT NULL);
 CREATE TABLE IF NOT EXISTS sessions (id text PRIMARY KEY NOT NULL, user_id text NOT NULL REFERENCES users(id) ON DELETE cascade, token_hash text NOT NULL UNIQUE, expires_at integer NOT NULL, created_at integer NOT NULL);
+CREATE TABLE IF NOT EXISTS oidc_identities (id text PRIMARY KEY NOT NULL, user_id text NOT NULL REFERENCES users(id) ON DELETE cascade, issuer text NOT NULL, subject text NOT NULL, created_at integer NOT NULL);
+CREATE UNIQUE INDEX IF NOT EXISTS oidc_identities_issuer_subject_idx ON oidc_identities(issuer, subject);
+CREATE INDEX IF NOT EXISTS oidc_identities_user_idx ON oidc_identities(user_id);
 CREATE TABLE IF NOT EXISTS audit_logs (id text PRIMARY KEY NOT NULL, actor_user_id text REFERENCES users(id) ON DELETE set null, target_user_id text REFERENCES users(id) ON DELETE set null, mailbox_id text REFERENCES mailboxes(id) ON DELETE set null, message_id text REFERENCES messages(id) ON DELETE set null, action text NOT NULL, metadata text, created_at integer NOT NULL);
 CREATE INDEX IF NOT EXISTS audit_logs_actor_idx ON audit_logs(actor_user_id);
 CREATE INDEX IF NOT EXISTS audit_logs_mailbox_idx ON audit_logs(mailbox_id);
