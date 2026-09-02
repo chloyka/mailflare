@@ -8,6 +8,7 @@
     "build:next": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "node --test 'tests/*.test.mjs'",
     "deploy": "opennextjs-cloudflare build && npm run db:migrate:remote && npm run deploy:worker",
     "deploy:worker": "OPEN_NEXT_DEPLOY=true wrangler deploy",
     "deploy:local": "npm run build && npm run deploy",
