@@ -44,12 +44,23 @@ export function createIdentityStore(env: CloudflareEnv): IdentityStore {
 
 		async createUser(input: { email: string; name: string }): Promise<StoredUser> {
 			const id = newId("usr");
+			// Attribute the account to the oldest administrator. The account detail, mailbox
+			// and avatar routes only accept a record whose createdByUserId is the requesting
+			// admin, so a provisioned user left unattributed shows up in the accounts list
+			// but answers "Account not found" when opened.
+			const [owner] = await db
+				.select({ id: users.id })
+				.from(users)
+				.where(eq(users.role, "admin"))
+				.orderBy(users.createdAt)
+				.limit(1);
 			await db.insert(users).values({
 				id,
 				email: input.email,
 				name: input.name,
 				passwordHash: unusablePasswordHash(),
 				role: "user",
+				createdByUserId: owner?.id ?? null,
 			});
 			return { id, email: input.email, disabled: false };
 		},
