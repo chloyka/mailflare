@@ -55,14 +55,14 @@ export function parseUserinfo(raw: Record<string, unknown>, groupsClaim: string 
 	};
 }
 
-function checkPolicy(claims: OidcClaims, policy: ProvisioningPolicy): OidcFailureCode | null {
+function checkPolicy(claims: OidcClaims, policy: ProvisioningPolicy, domainEmail: string | null): OidcFailureCode | null {
 	if (policy.requiredGroup && !claims.groups.includes(policy.requiredGroup)) {
 		return "group_missing";
 	}
 
 	if (policy.allowedEmailDomains.length) {
-		if (!claims.email || !claims.email.includes("@")) return "domain_not_allowed";
-		const domain = claims.email.slice(claims.email.lastIndexOf("@") + 1);
+		if (!domainEmail || !domainEmail.includes("@")) return "domain_not_allowed";
+		const domain = domainEmail.slice(domainEmail.lastIndexOf("@") + 1);
 		if (!policy.allowedEmailDomains.includes(domain)) return "domain_not_allowed";
 	}
 
@@ -79,7 +79,7 @@ export async function resolveOidcUser(input: {
 
 	const linked = await store.findUserByOidcIdentity(issuer, claims.subject);
 	if (linked) {
-		const denied = checkPolicy(claims, policy);
+		const denied = checkPolicy(claims, policy, linked.email);
 		if (denied) return { ok: false, code: denied };
 		return linked.disabled ? { ok: false, code: "account_disabled" } : { ok: true, user: linked };
 	}
@@ -89,7 +89,7 @@ export async function resolveOidcUser(input: {
 
 	const existing = await store.findUserByEmail(claims.email);
 	if (existing) {
-		const denied = checkPolicy(claims, policy);
+		const denied = checkPolicy(claims, policy, claims.email);
 		if (denied) return { ok: false, code: denied };
 		if (existing.disabled) return { ok: false, code: "account_disabled" };
 		await store.linkIdentity(existing.id, issuer, claims.subject);
@@ -98,7 +98,7 @@ export async function resolveOidcUser(input: {
 
 	if (!policy.autoProvision) return { ok: false, code: "no_account" };
 
-	const denied = checkPolicy(claims, policy);
+	const denied = checkPolicy(claims, policy, claims.email);
 	if (denied) return { ok: false, code: denied };
 
 	const localPart = claims.email.slice(0, claims.email.indexOf("@"));
