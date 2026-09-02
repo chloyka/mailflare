@@ -14,9 +14,17 @@ import { ensureMailboxDomainRouting } from "@/lib/mailboxes/domain-addresses";
 import { readJsonBody } from "@/lib/http/request";
 import { RequestBodyTooLargeError } from "@/lib/http/errors";
 import { verifyTurnstileToken } from "@/lib/auth/turnstile";
+import { readOidcConfig } from "@/lib/oidc/config";
 
 export async function POST(request: Request) {
 	const env = getEnv();
+	const oidc = readOidcConfig(env as unknown as Record<string, unknown>);
+	if (oidc.status === "enabled" && oidc.config.oidcOnly) {
+		return NextResponse.json(
+			{ error: "First-run setup cannot be completed while OIDC_ONLY is enabled. Unset OIDC_ONLY, create the first administrator, then enable it again." },
+			{ status: 403 },
+		);
+	}
 	const db = getDb(env);
 	if (await hasAdminAccount(env)) {
 		return NextResponse.json({ error: "Registration is closed after the first account is created" }, { status: 403 });
