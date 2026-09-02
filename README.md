@@ -54,7 +54,7 @@ Add your Cloudflare credentials to `.dev.vars`, then open [http://localhost:3000
 
 ## Single sign-on (OIDC)
 
-Mailflare can authenticate users against an external OpenID Connect provider (Keycloak, Auth0, Okta, and similar) in addition to, or instead of, its built-in password login. With none of the variables below set, the login page and API behave exactly as they do today — SSO is entirely opt-in.
+Mailflare can authenticate users against an external OpenID Connect provider (Keycloak, Auth0, Okta, and similar) in addition to, or instead of, its built-in password login. With none of the variables below set, the login API and page behavior are unchanged — SSO is entirely opt-in. The one visible difference regardless of configuration: the login error message now renders above the form instead of inside it, so it can still show when the form is hidden under `OIDC_ONLY`.
 
 Setting `OIDC_ISSUER`, `OIDC_CLIENT_ID`, and `OIDC_CLIENT_SECRET` together enables a "Sign in with SSO" button on the login page. The remaining variables are optional and refine the behavior.
 
@@ -117,7 +117,8 @@ With `OIDC_ONLY=true`:
 - Password sign-in is refused server-side (`POST /api/auth/login` returns `403`), even if a user knows a valid password.
 - First-run setup is refused too (`403`) — **the first administrator account cannot be created through single sign-on.** Deploy without `OIDC_ONLY`, complete `/setup` to create the first admin, and only then set `OIDC_ONLY=true`.
 - A password set through the account settings page has no effect while `OIDC_ONLY` is enabled — it is stored but ignored at login.
-- If the provider becomes unreachable or misconfigured while `OIDC_ONLY` is enabled, there is **no other way to sign in**. The only recovery is to unset `OIDC_ONLY` and redeploy.
+- If the provider becomes unreachable or misconfigured while `OIDC_ONLY` is enabled, there is **no other way to sign in**. Recovery is any change that stops single sign-on from being fully configured — unsetting `OIDC_ONLY` works, but so does removing `OIDC_CLIENT_SECRET`, which is arguably the better break-glass since it also removes the broken sign-in button.
+- The reverse trap: if `OIDC_ONLY=true` is combined with `OIDC_REQUIRED_GROUP`, removing `OIDC_GROUPS_CLAIM` makes the configuration incomplete. Single sign-on then starts responding `503`, and password sign-in silently comes back on — `OIDC_ONLY` stops applying because it is only enforced while single sign-on is fully configured. A warning is logged in this state naming the missing variable, but sign-in is not blocked.
 
 ### Auto-provisioned users have no mailbox
 

@@ -15,12 +15,18 @@ import { readOidcConfig } from "@/lib/oidc/config";
 
 export async function POST(request: Request) {
 	const env = getEnv();
-	const oidc = readOidcConfig(env as unknown as Record<string, unknown>);
+	const envRecord = env as unknown as Record<string, unknown>;
+	const oidc = readOidcConfig(envRecord);
 	if (oidc.status === "enabled" && oidc.config.oidcOnly) {
 		return NextResponse.json(
 			{ error: "Password sign-in is disabled. Use single sign-on." },
 			{ status: 403 },
 		);
+	}
+	if (oidc.status === "incomplete" && typeof envRecord.OIDC_ONLY === "string") {
+		console.warn("Password sign-in is enabled because the OIDC configuration is incomplete", {
+			missing: oidc.missing,
+		});
 	}
 	let body: unknown;
 	try {
