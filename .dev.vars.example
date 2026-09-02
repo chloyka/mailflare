@@ -18,3 +18,32 @@ CF_TOKEN=your_api_token_with_zone_email_permissions
 # Legacy Global API Key alternative. Use this only instead of CF_TOKEN.
 # CF_EMAIL=you@example.com
 # CF_API_KEY=your_global_api_key
+
+# Optional: single sign-on (OIDC). Setting these three together enables SSO.
+# OIDC_ISSUER=https://auth.example.com/realms/erp
+# OIDC_CLIENT_ID=your_oidc_client_id
+# OIDC_CLIENT_SECRET=your_oidc_client_secret
+
+# Optional: space-separated scopes requested at the provider. Default: openid email profile.
+# OIDC_SCOPES=openid email profile
+
+# Optional: explicit OIDC callback URL. Set this in production deployments.
+# OIDC_REDIRECT_URI=https://your-host/api/auth/oidc/callback
+
+# Optional: text shown on the login page SSO button. Default: Sign in with SSO.
+# OIDC_BUTTON_LABEL=Sign in with SSO
+
+# Optional: auto-create a mailflare account on first SSO sign-in. Default: false.
+# OIDC_AUTO_PROVISION=false
+
+# Optional: comma-separated list of email domains allowed to sign in via SSO.
+# OIDC_ALLOWED_EMAIL_DOMAINS=example.com,example.org
+
+# Optional: name of the userinfo claim carrying group membership, used with OIDC_REQUIRED_GROUP.
+# OIDC_GROUPS_CLAIM=groups
+
+# Optional: group name required in OIDC_GROUPS_CLAIM for sign-in to succeed.
+# OIDC_REQUIRED_GROUP=your-group-name
+
+# Optional: disable password sign-in and first-run setup, forcing SSO for every login. Default: false.
+# OIDC_ONLY=false
