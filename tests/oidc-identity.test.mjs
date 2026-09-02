@@ -79,12 +79,77 @@ test("branch 1: an existing link wins and ignores the idp email", async () => {
 	assert.equal(calls.created.length, 0);
 });
 
+test("an already-linked user not in the required group is refused, even though identification does not need it", async () => {
+	const linked = { id: "u1", email: "user@example.com", disabled: false };
+	const { store, calls } = makeStore({ identities: { [`${ISSUER}|sub-1`]: linked } });
+	const result = await resolveOidcUser({
+		issuer: ISSUER,
+		claims: claims({ groups: ["other"] }),
+		policy: { autoProvision: false, allowedEmailDomains: [], requiredGroup: "mail-users" },
+		store,
+	});
+	assert.deepEqual(result, { ok: false, code: "group_missing" });
+	assert.equal(calls.linked.length, 0);
+});
+
+test("an already-linked user whose claimed email domain is not allowed is refused", async () => {
+	const linked = { id: "u1", email: "user@example.com", disabled: false };
+	const { store, calls } = makeStore({ identities: { [`${ISSUER}|sub-1`]: linked } });
+	const result = await resolveOidcUser({
+		issuer: ISSUER,
+		claims: claims({ email: "user@evilexample.com" }),
+		policy: { autoProvision: false, allowedEmailDomains: ["example.com"], requiredGroup: null },
+		store,
+	});
+	assert.deepEqual(result, { ok: false, code: "domain_not_allowed" });
+	assert.equal(calls.linked.length, 0);
+});
+
+test("a configured domain filter fails closed when the claims carry no email to check", async () => {
+	const linked = { id: "u1", email: "user@example.com", disabled: false };
+	const { store, calls } = makeStore({ identities: { [`${ISSUER}|sub-1`]: linked } });
+	const result = await resolveOidcUser({
+		issuer: ISSUER,
+		claims: claims({ email: null }),
+		policy: { autoProvision: false, allowedEmailDomains: ["example.com"], requiredGroup: null },
+		store,
+	});
+	assert.deepEqual(result, { ok: false, code: "domain_not_allowed" });
+	assert.equal(calls.linked.length, 0);
+});
+
 test("branch 2: a verified email links to the existing account exactly once", async () => {
 	const existing = { id: "u2", email: "user@example.com", disabled: false };
 	const { store, calls } = makeStore({ usersByEmail: { "user@example.com": existing } });
 	const result = await resolveOidcUser({ issuer: ISSUER, claims: claims(), policy: CLOSED_POLICY, store });
 	assert.deepEqual(result, { ok: true, user: existing });
 	assert.deepEqual(calls.linked, [{ userId: "u2", issuer: ISSUER, subject: "sub-1" }]);
+});
+
+test("the link-by-email path refuses a user missing the required group, and links nothing", async () => {
+	const existing = { id: "u2", email: "user@example.com", disabled: false };
+	const { store, calls } = makeStore({ usersByEmail: { "user@example.com": existing } });
+	const result = await resolveOidcUser({
+		issuer: ISSUER,
+		claims: claims({ groups: ["other"] }),
+		policy: { autoProvision: false, allowedEmailDomains: [], requiredGroup: "mail-users" },
+		store,
+	});
+	assert.deepEqual(result, { ok: false, code: "group_missing" });
+	assert.equal(calls.linked.length, 0);
+});
+
+test("the link-by-email path refuses a disallowed domain, and links nothing", async () => {
+	const existing = { id: "u2", email: "user@evilexample.com", disabled: false };
+	const { store, calls } = makeStore({ usersByEmail: { "user@evilexample.com": existing } });
+	const result = await resolveOidcUser({
+		issuer: ISSUER,
+		claims: claims({ email: "user@evilexample.com" }),
+		policy: { autoProvision: false, allowedEmailDomains: ["example.com"], requiredGroup: null },
+		store,
+	});
+	assert.deepEqual(result, { ok: false, code: "domain_not_allowed" });
+	assert.equal(calls.linked.length, 0);
 });
 
 test("branch 3: an unverified email never links and never provisions", async () => {
