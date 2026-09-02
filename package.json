@@ -56,6 +56,15 @@
       },
       "CF_API_KEY": {
         "description": "Legacy Global API Key auth only. Prefer `CF_TOKEN` for new deployments."
+      },
+      "OIDC_ISSUER": {
+        "description": "Base URL of the OpenID Connect provider, for example https://auth.example.com/realms/erp. Setting this together with OIDC_CLIENT_ID and OIDC_CLIENT_SECRET enables the single sign-on button on the login page."
+      },
+      "OIDC_CLIENT_ID": {
+        "description": "OAuth client id registered with the OIDC provider. The client must be confidential and allow the authorization code flow with PKCE."
+      },
+      "OIDC_CLIENT_SECRET": {
+        "description": "OAuth client secret. Store this as a secret, not as a plain variable."
       }
     }
   },

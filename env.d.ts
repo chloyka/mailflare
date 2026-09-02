@@ -21,5 +21,16 @@ interface CloudflareEnv {
 	TURNSTILE_SECRET_KEY?: string;
 	GITHUB_UPDATE_TOKEN?: string;
 	GITHUB_UPDATE_REF?: string;
-	GITHUB_UPDATE_REPO?: string
+	GITHUB_UPDATE_REPO?: string;
+	OIDC_ISSUER?: string;
+	OIDC_CLIENT_ID?: string;
+	OIDC_CLIENT_SECRET?: string;
+	OIDC_SCOPES?: string;
+	OIDC_REDIRECT_URI?: string;
+	OIDC_BUTTON_LABEL?: string;
+	OIDC_AUTO_PROVISION?: string;
+	OIDC_ALLOWED_EMAIL_DOMAINS?: string;
+	OIDC_GROUPS_CLAIM?: string;
+	OIDC_REQUIRED_GROUP?: string;
+	OIDC_ONLY?: string;
 }
