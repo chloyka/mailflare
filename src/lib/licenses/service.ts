@@ -43,6 +43,20 @@ export async function getLicenseStatus(env: CloudflareEnv): Promise<LicenseStatu
 }
 
 export async function getLicenseEntitlements(env: CloudflareEnv): Promise<LicenseEntitlements> {
+	// Self-hosted override for this deployment. Upstream is AGPL-3.0, which permits running a
+	// modified version for any purpose; §13 still requires offering the corresponding source to
+	// anyone who uses this instance over the network. Unset the variable to restore plan gating.
+	const rawOverride = (env as unknown as Record<string, unknown>).LICENSE_PLAN_OVERRIDE;
+	const override = typeof rawOverride === "string" ? rawOverride.trim().toLowerCase() : "";
+	if (override === "team" || override === "pro") {
+		return {
+			plan: override as LicensePlan,
+			canCustomizeBranding: true,
+			canManageAccounts: override === "team",
+			canForwardEmail: true,
+		};
+	}
+
 	try {
 		const status = await getLicenseStatus(env);
 		// TODO: confirm Paymug's exact feature identifiers when they are documented; plan is authoritative meanwhile.
