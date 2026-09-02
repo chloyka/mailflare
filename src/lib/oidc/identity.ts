@@ -1,3 +1,7 @@
+// This module must have no runtime imports: tests/oidc-*.test.mjs load it directly via
+// Node's type-stripping, which cannot resolve the "@/*" path alias. Use `import type`
+// only, and pass anything else in as a parameter.
+
 export type OidcClaims = {
 	subject: string;
 	email: string | null;

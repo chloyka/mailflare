@@ -1,3 +1,7 @@
+// This module must have no runtime imports: tests/oidc-*.test.mjs load it directly via
+// Node's type-stripping, which cannot resolve the "@/*" path alias. Use `import type`
+// only, and pass anything else in as a parameter.
+
 export function base64UrlEncode(bytes: Uint8Array): string {
 	let binary = "";
 	for (const byte of bytes) binary += String.fromCharCode(byte);
@@ -15,6 +19,7 @@ export async function codeChallengeS256(verifier: string): Promise<string> {
 	return base64UrlEncode(new Uint8Array(digest));
 }
 
+// Constant-time only for equal-length inputs; a length mismatch returns early.
 export function safeCompare(a: string, b: string): boolean {
 	if (a.length !== b.length) return false;
 	let mismatch = 0;
