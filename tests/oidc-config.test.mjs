@@ -52,12 +52,31 @@ test("normalises the allowed email domain list", () => {
 
 test("ignores the required group unless the groups claim is configured", () => {
 	const withoutClaim = readOidcConfig({ ...FULL, OIDC_REQUIRED_GROUP: "mail-users" });
-	assert.equal(withoutClaim.config.groupsClaim, null);
-	assert.equal(withoutClaim.config.requiredGroup, null);
+	assert.equal(withoutClaim.status, "incomplete");
+	assert.deepEqual(withoutClaim.missing, ["OIDC_GROUPS_CLAIM"]);
 
 	const withClaim = readOidcConfig({ ...FULL, OIDC_GROUPS_CLAIM: "groups", OIDC_REQUIRED_GROUP: "mail-users" });
 	assert.equal(withClaim.config.groupsClaim, "groups");
 	assert.equal(withClaim.config.requiredGroup, "mail-users");
+});
+
+test("requires the groups claim when a required group is set", () => {
+	const result = readOidcConfig({ ...FULL, OIDC_REQUIRED_GROUP: "mail-users" });
+	assert.equal(result.status, "incomplete");
+	assert.ok(result.missing.includes("OIDC_GROUPS_CLAIM"));
+});
+
+test("allows the groups claim on its own with no required group", () => {
+	const result = readOidcConfig({ ...FULL, OIDC_GROUPS_CLAIM: "groups" });
+	assert.equal(result.status, "enabled");
+	assert.equal(result.config.groupsClaim, "groups");
+	assert.equal(result.config.requiredGroup, null);
+});
+
+test("treats a blank required group as absent, not a misconfiguration", () => {
+	const result = readOidcConfig({ ...FULL, OIDC_REQUIRED_GROUP: "   " });
+	assert.equal(result.status, "enabled");
+	assert.equal(result.config.requiredGroup, null);
 });
 
 test("strips a trailing slash from the issuer", () => {

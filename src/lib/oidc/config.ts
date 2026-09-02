@@ -48,6 +48,10 @@ export function readOidcConfig(env: Record<string, unknown>): OidcConfigResult {
 	}
 
 	const groupsClaim = readString(env, "OIDC_GROUPS_CLAIM");
+	const requiredGroup = readString(env, "OIDC_REQUIRED_GROUP");
+	if (requiredGroup && !groupsClaim) {
+		return { status: "incomplete", missing: ["OIDC_GROUPS_CLAIM"] };
+	}
 
 	return {
 		status: "enabled",
@@ -61,7 +65,7 @@ export function readOidcConfig(env: Record<string, unknown>): OidcConfigResult {
 			autoProvision: readBoolean(env, "OIDC_AUTO_PROVISION"),
 			allowedEmailDomains: readList(env, "OIDC_ALLOWED_EMAIL_DOMAINS"),
 			groupsClaim,
-			requiredGroup: groupsClaim ? readString(env, "OIDC_REQUIRED_GROUP") : null,
+			requiredGroup,
 			oidcOnly: readBoolean(env, "OIDC_ONLY"),
 		},
 	};
