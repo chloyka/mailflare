@@ -46,10 +46,13 @@ export async function POST(request: Request) {
 		if (user.role !== "admin") {
 			return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 		}
+		// Administration is instance-wide: every admin manages every account (see
+		// listAccountsForAdmin). Scoping this to createdByUserId made accounts an admin
+		// can see answer "Account not found" as soon as another admin had created them.
 		const [owner] = await db
 			.select({ id: users.id })
 			.from(users)
-			.where(and(eq(users.id, ownerUserId), eq(users.createdByUserId, user.id)))
+			.where(eq(users.id, ownerUserId))
 			.limit(1);
 		if (!owner) return NextResponse.json({ error: "Account not found" }, { status: 404 });
 	}

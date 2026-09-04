@@ -32,7 +32,7 @@ export async function GET(request: Request, { params }: MailboxAccessRouteParams
 		db
 			.select({ id: users.id, email: users.email, name: users.name, role: users.role })
 			.from(users)
-			.where(and(eq(users.createdByUserId, access.user!.id), eq(users.disabled, false))),
+			.where(eq(users.disabled, false)),
 	]);
 
 	return NextResponse.json({ members, availableUsers });
@@ -50,7 +50,7 @@ export async function POST(request: Request, { params }: MailboxAccessRouteParam
 	const [user] = await db
 		.select({ id: users.id })
 		.from(users)
-		.where(and(eq(users.id, parsed.data.userId), eq(users.createdByUserId, access.user!.id), eq(users.disabled, false)))
+		.where(and(eq(users.id, parsed.data.userId), eq(users.disabled, false)))
 		.limit(1);
 	if (!user) return NextResponse.json({ error: "Account not found" }, { status: 404 });
 

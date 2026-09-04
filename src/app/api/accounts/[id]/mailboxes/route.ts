@@ -12,7 +12,7 @@ export async function GET(request: Request, { params }: AccountRouteParams) {
 	const { id } = await params;
 	const db = getDb(access.env);
 	const account = await selectAccountById(db, id);
-	if (!account || (account.id !== access.user!.id && account.createdByUserId !== access.user!.id)) {
+	if (!account) {
 		return NextResponse.json({ error: "Account not found" }, { status: 404 });
 	}
 	const rows = await db.select({

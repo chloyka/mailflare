@@ -44,10 +44,9 @@ export function createIdentityStore(env: CloudflareEnv): IdentityStore {
 
 		async createUser(input: { email: string; name: string }): Promise<StoredUser> {
 			const id = newId("usr");
-			// Attribute the account to the oldest administrator. The account detail, mailbox
-			// and avatar routes only accept a record whose createdByUserId is the requesting
-			// admin, so a provisioned user left unattributed shows up in the accounts list
-			// but answers "Account not found" when opened.
+			// Attribute the account to the oldest administrator so provisioned users carry
+			// the same "created by" trail as hand-made ones. Access no longer depends on it:
+			// the account, mailbox and avatar routes are instance-wide for admins.
 			const [owner] = await db
 				.select({ id: users.id })
 				.from(users)

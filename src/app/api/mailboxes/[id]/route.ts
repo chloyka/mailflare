@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
-import { mailboxes, users } from "@/db/schema";
+import { mailboxes } from "@/db/schema";
 import { requireUser } from "@/lib/auth/cookies";
 import { getEnv } from "@/lib/cloudflare";
 import { getMailboxAccessLevel } from "@/lib/mailboxes/access";
@@ -99,11 +99,9 @@ export async function DELETE(request: Request, { params }: MailboxRouteParams) {
 	const [mailbox] = await db.select().from(mailboxes).where(eq(mailboxes.id, id)).limit(1);
 	if (!mailbox) return NextResponse.json({ error: "Mailbox not found" }, { status: 404 });
 
-	let allowed = mailbox.userId === user.id && user.canManageMailboxes;
-	if (!allowed && user.role === "admin") {
-		const [owner] = await db.select({ createdByUserId: users.createdByUserId }).from(users).where(eq(users.id, mailbox.userId)).limit(1);
-		allowed = mailbox.userId === user.id || owner?.createdByUserId === user.id;
-	}
+	// Instance-wide administration: an admin manages every account's mailboxes, not just
+	// the accounts they created themselves.
+	const allowed = (mailbox.userId === user.id && user.canManageMailboxes) || user.role === "admin";
 	if (!allowed) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
 	try {
