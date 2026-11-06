@@ -46,8 +46,8 @@ test("parses booleans from true and 1 case-insensitively", () => {
 });
 
 test("normalises the allowed email domain list", () => {
-	const result = readOidcConfig({ ...FULL, OIDC_ALLOWED_EMAIL_DOMAINS: " Example.COM , ,aejuice.com " });
-	assert.deepEqual(result.config.allowedEmailDomains, ["example.com", "aejuice.com"]);
+	const result = readOidcConfig({ ...FULL, OIDC_ALLOWED_EMAIL_DOMAINS: " Example.COM , ,Example.ORG " });
+	assert.deepEqual(result.config.allowedEmailDomains, ["example.com", "example.org"]);
 });
 
 test("ignores the required group unless the groups claim is configured", () => {

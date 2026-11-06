@@ -56,13 +56,6 @@
 		},
 	],
 	"workers_dev": true,
-	"routes": [
-		{
-			"pattern": "mail.aejuice.com",
-			"custom_domain": true,
-			"zone_name": "aejuice.com",
-		},
-	],
 	"observability": {
 		"enabled": true,
 	},
@@ -77,7 +70,6 @@
 		{
 			"binding": "DB",
 			"database_name": "mailflare",
-			"database_id": "77f60970-fad7-4509-b6c7-fd5a9f1ff920",
 			"migrations_dir": "drizzle/migrations",
 		},
 	],

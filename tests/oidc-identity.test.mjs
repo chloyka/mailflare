@@ -259,7 +259,7 @@ test("branch 5: the domain filter rejects before creating anything", async () =>
 	const result = await resolveOidcUser({
 		issuer: ISSUER,
 		claims: claims(),
-		policy: { autoProvision: true, allowedEmailDomains: ["aejuice.com"], requiredGroup: null },
+		policy: { autoProvision: true, allowedEmailDomains: ["example.org"], requiredGroup: null },
 		store,
 	});
 	assert.deepEqual(result, { ok: false, code: "domain_not_allowed" });
